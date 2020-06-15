@@ -236,7 +236,7 @@ func GetEngines() map[string]Engine {
 	engines["fzmovies"] = NewFzEngine()
 	engines["besthdmovies"] = NewBestHDEngine()
 	engines["tvseries"] = NewTvSeriesEngine()
-	engines["mycoolmoviez"] = NewMyCoolMoviezEngine()
+//	engines["mycoolmoviez"] = NewMyCoolMoviezEngine()
 	engines["animeout"] = NewAnimeOutEngine()
 	return engines
 }
