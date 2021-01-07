@@ -55,10 +55,10 @@ type Engine interface {
 // Scrape : Parse queries a url and return results
 func Scrape(engine Engine) ([]Movie, error) {
 	// Config Vars
-	seleniumURL := fmt.Sprintf("%s/wd/hub", viper.GetString("selenium-url"))
+	//  seleniumURL := fmt.Sprintf("%s/wd/hub", viper.GetString("selenium-url"))
 	cacheDir := viper.GetString("cache-dir")
 	var (
-		t   *transport.Transport
+		t   *transport.ChromeDpTransport
 		err error
 	)
 
@@ -70,8 +70,8 @@ func Scrape(engine Engine) ([]Movie, error) {
 
 	// Add Cloud Flare scraper bypasser
 	if engine.getName() == "NetNaija" {
-		log.Debug("Switching to Selenium transport")
-		t, err = transport.NewSeleniumTransport(http.DefaultTransport, seleniumURL)
+		log.Debug("Switching to ChromeDpTransport")
+		t, err = transport.NewChromeDpTransport(http.DefaultTransport)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -81,7 +81,8 @@ func Scrape(engine Engine) ([]Movie, error) {
 	// Close the WebDriver Instance
 	defer func() {
 		if engine.getName() == "NetNaija" {
-			t.WebDriver.Quit()
+			t.RemoteAllocCancel()
+			t.Cancel()
 		}
 	}()
 
@@ -98,6 +99,10 @@ func Scrape(engine Engine) ([]Movie, error) {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	//  c.OnHTML("div", func(e *colly.HTMLElement) {
+	//    log.Debugf("%#v", e)
+	//  })
 
 	c.OnHTML(main, func(e *colly.HTMLElement) {
 		e.ForEach(article, func(_ int, el *colly.HTMLElement) {
@@ -166,7 +171,11 @@ type Movie struct {
 	Category       string // csv of categories
 	Cast           string // csv of actors in movie
 	UploadDate     string
-	Source         string // The Engine From which it is gotten from
+	Source         string              // The Engine From which it is gotten from
+	SubtitleLink   *url.URL            // single subtitle link
+	SubtitleLinks  map[string]*url.URL // Subtitle links for a series
+	ImdbLink       string              // imdb link if available
+	Tags           string              // csv of words that are linked to the movie if available
 }
 
 // MovieJSON : JSON structure of all downloadable movies
@@ -174,6 +183,7 @@ type MovieJSON struct {
 	Movie
 	DownloadLink  string
 	SDownloadLink map[string]string
+	SubtitleLinks map[string]string
 }
 
 func (m *Movie) String() string {
@@ -182,15 +192,20 @@ func (m *Movie) String() string {
 
 // MarshalJSON Json structure to return from api
 func (m *Movie) MarshalJSON() ([]byte, error) {
-	var sDownloadLink map[string]string
+	sDownloadLink := make(map[string]string)
 	for key, val := range m.SDownloadLink {
 		sDownloadLink[key] = val.String()
+	}
+	subtitleLinks := make(map[string]string)
+	for key, val := range m.SubtitleLinks {
+		subtitleLinks[key] = val.String()
 	}
 
 	movie := MovieJSON{
 		Movie:         *m,
 		DownloadLink:  m.DownloadLink.String(),
 		SDownloadLink: sDownloadLink,
+		SubtitleLinks: subtitleLinks,
 	}
 
 	return json.Marshal(movie)
@@ -242,6 +257,8 @@ func GetEngines() map[string]Engine {
 	engines["mycoolmoviez"] = NewMyCoolMoviezEngine()
 	engines["coolmoviez"] = NewCoolMoviezEngine()
 	engines["animeout"] = NewAnimeOutEngine()
+	engines["takanimelist"] = NewTakanimeListEngine()
+	engines["kdramahood"] = NewKDramaHoodEngine()
 	return engines
 }
 

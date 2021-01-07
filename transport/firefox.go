@@ -3,9 +3,9 @@ package transport
 import (
 	"bytes"
 	"fmt"
-	"os"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -13,11 +13,7 @@ import (
 	"github.com/tebeka/selenium/firefox"
 )
 
-const (
-	userAgent = `Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36`
-)
-
-type Transport struct {
+type SeleniumTransport struct {
 	upstream  http.RoundTripper
 	WebDriver selenium.WebDriver
 }
@@ -37,7 +33,7 @@ func NewClient() (c *http.Client, err error) {
 	return
 }
 
-func NewSeleniumTransport(upstream http.RoundTripper, seleniumURL string) (*Transport, error) {
+func NewSeleniumTransport(upstream http.RoundTripper, seleniumURL string) (*SeleniumTransport, error) {
 
 	caps := selenium.Capabilities{"browserName": "firefox"}
 	firefoxCaps := firefox.Capabilities{Args: []string{"-headless"}}
@@ -45,15 +41,15 @@ func NewSeleniumTransport(upstream http.RoundTripper, seleniumURL string) (*Tran
 	wd, err := selenium.NewRemote(caps, seleniumURL)
 
 	if err != nil {
-		return &Transport{}, err
+		return &SeleniumTransport{}, err
 	}
-	return &Transport{
+	return &SeleniumTransport{
 		upstream:  upstream,
 		WebDriver: wd,
 	}, nil
 }
 
-func (t *Transport) RoundTrip(r *http.Request) (*http.Response, error) {
+func (t *SeleniumTransport) RoundTrip(r *http.Request) (*http.Response, error) {
 	var (
 		title string
 		body  string

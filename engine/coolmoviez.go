@@ -69,6 +69,7 @@ func (engine *CoolMoviez) parseSingleMovie(el *colly.HTMLElement, index int) (Mo
 	if strings.HasSuffix(movie.Title, appendage) {
 		movie.Title = strings.TrimSuffix(movie.Title, appendage)
 	}
+	movie.Title = strings.TrimSuffix(movie.Title, "\n")
 	re := regexp.MustCompile(`(\d+)`)
 	stringsub := re.FindStringSubmatch(movie.Title)
 	if len(stringsub) > 0 {
@@ -113,6 +114,11 @@ func (engine *CoolMoviez) updateDownloadProps(downloadCollector *colly.Collector
 	downloadCollector.OnHTML("a.fileName", func(e *colly.HTMLElement) {
 		movie := &(*movies)[getMovieIndexFromCtx(e.Request)]
 		initialLink := e.Attr("href")
+		re := regexp.MustCompile(`Size:\s+(.*)`)
+		stringsub := re.FindStringSubmatch(e.Text)
+		if len(stringsub) > 1 {
+			movie.Size = stringsub[1]
+		}
 
 		replacePrefix := "https://www.coolmoviez.buzz/file"
 		if strings.HasPrefix(initialLink, replacePrefix) {

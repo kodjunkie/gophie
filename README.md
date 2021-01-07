@@ -18,14 +18,13 @@ Search, stream and download movies without having to bump into ads. Feel free to
 
 ## What is Gophie
 
-Gophie is a tool to help you search, stream and download movies from movie sites without going through all the stress of by-passing ads. Currently, the following sites are supported:
+Gophie is a tool to help you search, stream and download movies from movie sites without going through all the stress of by-passing ads. Currently, the following sites are actively supported:
 
 ### Movies
 
 - NetNaija
 - FzMovies
 - BestHD
-- MyCoolMoviez
 - CoolMoviez
 
 ### Series
@@ -35,6 +34,11 @@ Gophie is a tool to help you search, stream and download movies from movie sites
 ### Anime
 
 - AnimeOut
+- Takanimelist
+
+### Korean
+
+- KDramaHood
 
 Gophie also has [mobile](https://github.com/Go-phie/gophie-mobile) and [web](https://github.com/Go-phie/gophie-web) clients.
 
@@ -42,7 +46,7 @@ Gophie also has [mobile](https://github.com/Go-phie/gophie-mobile) and [web](htt
 With Golang installed
 
 ```bash
-go get github.com/go-phie/gophie
+go get -u github.com/go-phie/gophie
 ```
 Or download from Github [Releases](https://github.com/go-phie/gophie/releases)
 
@@ -86,7 +90,15 @@ For Development use `go run main.go [command]`
 
 ## Deployment
 
-The deployed API version from `gophie api` is available on [Heroku](https://deploy-gophie.herokuapp.com). Please read the API documentation for usage
+### Tagging
+
+To create a new tag, use the make file
+
+```bash
+make upgrade version=0.x.x
+```
+
+The deployed API version from `gophie api` is available on [Heroku](https://deploy-gophie.herokuapp.com). Please read the [API documentation](https://bisoncorps.stoplight.io/docs/gophie/reference/Gophie.v1.yaml) for usage
 
 ## License
 

@@ -75,7 +75,21 @@ func (engine *FzEngine) parseSingleMovie(el *colly.HTMLElement, index int) (Movi
 	}
 	movie.Title = strings.TrimSuffix(strings.TrimSpace(el.ChildText("b")), "<more>")
 	if len(el.ChildTexts("small")) > 3 {
-		movie.Description = strings.TrimSpace(el.ChildTexts("small")[3])
+		description := strings.TrimSpace(el.ChildTexts("small")[3])
+		tagsRe := regexp.MustCompile(`Tags\s+: (.*)\.\.\..*`)
+		descAndOthers := tagsRe.Split(description, -1)
+
+		if len(descAndOthers) > 0 {
+			movie.Description = strings.TrimSuffix(descAndOthers[0], "<more>")
+			tag := tagsRe.FindStringSubmatch(description)
+
+			if len(tag) > 1 {
+				movie.Tags = strings.ReplaceAll(tag[1], "|", ",")
+			}
+		} else {
+			movie.Description = description
+		}
+
 	}
 	downloadLink, err := url.Parse(el.Request.AbsoluteURL(el.ChildAttr("a", "href")))
 
@@ -103,7 +117,13 @@ func (engine *FzEngine) updateDownloadProps(downloadCollector *colly.Collector, 
 		stringsub := re.FindStringSubmatch(e.ChildText("dcounter"))
 		if len(stringsub) > 0 {
 			dl := strings.TrimPrefix(stringsub[0], "(")
-			movie.Size = dl
+			dlRe := regexp.MustCompile(`(.*MB)\)`)
+			dlSize := dlRe.FindStringSubmatch(dl)
+			if len(dlSize) > 1 {
+				movie.Size = dlSize[1]
+			} else {
+				movie.Size = dl
+			}
 		}
 		if strings.HasSuffix(movie.Title, "Tags") {
 			movie.Title = strings.TrimSuffix(movie.Title, "Tags")
