@@ -39,13 +39,16 @@ type Engine interface {
 	Search(param ...string) SearchResult
 	List(page int) SearchResult
 	String() string
+
 	// parseSingleMovie: parses the result of a colly HTMLElement and returns a movie
+	// The input el is usually the block of code from the article specified in getParseAttrs
 	parseSingleMovie(el *colly.HTMLElement, index int) (Movie, error)
 
 	// getParseAttrs : get the attributes to use to parse a returned soup
 	// the first return string is the part of the html to be parsed e.g `body`, `main`
 	// the second return string is the attributes to be used in parsing the element specified
-	// by the first return
+	// by the first return. For example returning main, article.sr-one results in parsing the main
+	// tag and parsing all article.sr-one within the main html
 	getParseAttrs() (string, string, error)
 
 	// parseSingleMovie: parses the result of a colly HTMLElement and returns a movie
@@ -57,16 +60,23 @@ func Scrape(engine Engine) ([]Movie, error) {
 	// Config Vars
 	//  seleniumURL := fmt.Sprintf("%s/wd/hub", viper.GetString("selenium-url"))
 	cacheDir := viper.GetString("cache-dir")
+	ignoreCache := viper.GetBool("ignore-cache")
 	var (
 		t   *transport.ChromeDpTransport
 		err error
+		c   *colly.Collector
 	)
 
-	c := colly.NewCollector(
-		// Cache responses to prevent multiple download of pages
-		// even if the collector is restarted
-		colly.CacheDir(cacheDir),
-	)
+	if ignoreCache {
+		c = colly.NewCollector()
+
+	} else {
+		c = colly.NewCollector(
+			// Cache responses to prevent multiple download of pages
+			// even if the collector is restarted
+			colly.CacheDir(cacheDir),
+		)
+	}
 
 	// Add Cloud Flare scraper bypasser
 	if engine.getName() == "NetNaija" {
@@ -278,4 +288,16 @@ func getMovieIndexFromCtx(r *colly.Request) int {
 		log.Fatal(err)
 	}
 	return movieIndex
+}
+
+// Get all form details into a neat map
+func getFormDetails(element *colly.HTMLElement) map[string]string {
+	submission := make(map[string]string)
+	inputNames := element.ChildAttrs("input", "name")
+	inputValues := element.ChildAttrs("input", "value")
+
+	for index := range inputNames {
+		submission[inputNames[index]] = inputValues[index]
+	}
+	return submission
 }
